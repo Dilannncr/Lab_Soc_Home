@@ -1,9 +1,7 @@
----
-title: "Laboratorio SOC Casero"
-subtitle: "Portafolio Técnico de Ciberseguridad Defensiva"
-author: "Dilan Castro Robles"
-date: "Agosto 2026"
----
+# Laboratorio SOC Casero
+### Portafolio Técnico de Ciberseguridad Defensiva
+
+**Dilan Castro Robles** | Agosto 2026
 
 Portafolio técnico de un laboratorio de ciberseguridad construido desde cero, replicando una infraestructura empresarial segmentada para practicar el ciclo completo de **ataque → detección → respuesta**.
 
@@ -16,10 +14,6 @@ Portafolio técnico de un laboratorio de ciberseguridad construido desde cero, r
 - Escenario 2 — RDP Brute Force + Movimiento Lateral
 - Roadmap de Escenarios
 - Stack de Herramientas
-
-```{=openxml}
-<w:p><w:r><w:br w:type="page"/></w:r></w:p>
-```
 
 ## Arquitectura del Laboratorio
 
@@ -37,10 +31,6 @@ Portafolio técnico de un laboratorio de ciberseguridad construido desde cero, r
 ![Topología completa del laboratorio](images/00-topologia-completa.png)
 
 ---
-
-```{=openxml}
-<w:p><w:r><w:br w:type="page"/></w:r></w:p>
-```
 
 ## Escenario 1: SMB Brute Force Attack hacia Domain Controller
 
@@ -236,10 +226,6 @@ T1046 (Network Service Discovery) · T1110 (Brute Force) · T1078 (Valid Account
 5. La autenticación NTLM en un dominio moderno es en sí misma una señal de alerta.
 
 ---
-
-```{=openxml}
-<w:p><w:r><w:br w:type="page"/></w:r></w:p>
-```
 
 ## Escenario 2: RDP Brute Force + Movimiento Lateral
 
@@ -460,10 +446,6 @@ Fecha: 14/08/2026
 | Defense Evasion | Valid Accounts: Domain Accounts | T1078.002 | runas |
 
 ---
-
-```{=openxml}
-<w:p><w:r><w:br w:type="page"/></w:r></w:p>
-```
 
 ## Roadmap de Escenarios
 

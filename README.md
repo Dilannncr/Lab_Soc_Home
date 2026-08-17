@@ -1,9 +1,14 @@
+[README.md](https://github.com/user-attachments/files/31153751/README.md)
 # Laboratorio SOC Casero
 ### Portafolio Técnico de Ciberseguridad Defensiva
 
 **Dilan Castro Robles** | Agosto 2026
 
-Portafolio técnico de un laboratorio de ciberseguridad construido desde cero, replicando una infraestructura empresarial segmentada para practicar el ciclo completo de **ataque → detección → respuesta**.
+**Sobre este proyecto:** este es un laboratorio personal (home lab), no experiencia profesional en un SOC real. Construí un entorno segmentado que replica una infraestructura empresarial para practicar el rol de **analista SOC**: cada escenario simula un ataque conocido y luego documenta el proceso completo de detección, investigación y respuesta — que es el trabajo real que haría un analista SOC Tier 1 del otro lado de la pantalla.
+
+**Flujo de trabajo de cada escenario:** Simulación de Ataque → Detección en SIEM (Wazuh) → Investigación y Correlación de Eventos → Respuesta y Contención → Documentación del Incidente (DFIR-IRIS).
+
+Las herramientas ofensivas (Nmap, Metasploit, Hydra, Mimikatz) se usan únicamente para generar tráfico y eventos realistas que analizar — el objetivo del proyecto no es la explotación en sí, sino todo lo que ocurre después: qué se ve en el SIEM, cómo se correlacionan los eventos, y cómo se contiene y documenta el incidente.
 
 **Contacto:** djaviercastro21@gmail.com | TryHackMe: [tryhackme.com/p/Dilannn](https://tryhackme.com/p/Dilannn)
 
@@ -108,7 +113,7 @@ Ejecución y resultado — credencial comprometida tras varios intentos fallidos
 ![Metasploit resultados Failed y SUCCESS](images/06-metasploit-success.png)
 
 ```
-[+] SUCCESS: SYS\Administrador:S0p0rt321
+[+] SUCCESS: SYS\Administrador:[LAB-CREDENTIAL]
 ```
 
 Patrón detectado: contraseña con formato "Estación + Año" (común en sysadmins que rotan contraseñas estacionalmente) — patrón débil y predecible.
@@ -169,8 +174,8 @@ Resultado de `creds_all`:
 
 ```
 MSV CREDENTIALS:
-Administrador → b9b3f09fe9c14fe7f6d8b08a2225c57a
-SRVAD01$      → 3b0c53d606b7817e941a767de81c000b
+Administrador → [REDACTED-NTLM-HASH]
+SRVAD01$      → [REDACTED-NTLM-HASH]
 WDIGEST: (null)  ← deshabilitado en Windows Server 2019 (en versiones antiguas mostraría la contraseña en texto claro)
 ```
 
@@ -212,7 +217,7 @@ Resultado — verificación de contención exitosa:
 
 ### Indicadores de Compromiso (IoCs)
 - **IP atacante:** 203.0.113.2
-- **Credenciales comprometidas:** `SYS\Administrador:S0p0rt321` | Hash NTLM: `b9b3f09fe9c14fe7f6d8b08a2225c57a`
+- **Credenciales comprometidas:** `SYS\Administrador:[LAB-CREDENTIAL]` | Hash NTLM: `[REDACTED-NTLM-HASH]`
 - **Event IDs críticos:** 4625, 4624, 4672, 7045, 1001
 
 ### Técnicas MITRE ATT&CK mapeadas
@@ -220,7 +225,7 @@ T1046 (Network Service Discovery) · T1110 (Brute Force) · T1078 (Valid Account
 
 ### Conclusiones
 1. Una contraseña predecible (patrón "Estación+Año") fue comprometida en segundos con un diccionario especializado.
-2. La detección temprana con SIEM es crítica: el promedio de detección sin SIEM es ~197 días; con Wazuh, segundos.
+2. La detección temprana con SIEM es crítica: sin monitoreo centralizado, este tipo de intrusión puede pasar desapercibida durante mucho tiempo; con Wazuh, la alerta se generó en segundos desde el primer escaneo.
 3. La defensa en profundidad (FortiGate + Wazuh + Sysmon) da visibilidad completa del ataque en todas sus fases.
 4. El Domain Controller es el activo más crítico de la infraestructura — comprometerlo equivale a comprometer todo el dominio.
 5. La autenticación NTLM en un dominio moderno es en sí misma una señal de alerta.
@@ -268,10 +273,10 @@ Puerto 3389/TCP abierto — Microsoft Terminal Services, con CredSSP y NLA habil
 
 ```bash
 hydra -L users.txt -P passwords.txt -f rdp://192.168.163.12
-hydra -l Dilannn -p S0p0rt321 -f rdp://192.168.163.12
+hydra -l Dilannn -p [LAB-CREDENTIAL] -f rdp://192.168.163.12
 ```
 
-Credenciales encontradas: `Dilannn:S0p0rt321`
+Credenciales encontradas: `Dilannn:[LAB-CREDENTIAL]`
 
 **Observación técnica:** con listas en paralelo (`-L -P`), Hydra reportó "0 valid password found" por saturación del módulo RDP interno. Con credencial única (`-l -p`), confirmó "1 valid password found". La fuente de verdad siempre es el SIEM — Wazuh registró el Event ID 4624 exitoso en ambos casos.
 
@@ -285,7 +290,7 @@ Credenciales encontradas: `Dilannn:S0p0rt321`
 **Herramienta:** xfreerdp
 
 ```bash
-xfreerdp /v:192.168.163.12 /u:Dilannn /p:S0p0rt321 /cert:ignore /sec:nla
+xfreerdp /v:192.168.163.12 /u:Dilannn /p:[LAB-CREDENTIAL] /cert:ignore /sec:nla
 ```
 
 Sesión RDP completa establecida — escritorio gráfico del Win10 accesible desde Kali.
@@ -295,16 +300,16 @@ Sesión RDP completa establecida — escritorio gráfico del Win10 accesible des
 ---
 
 ### Fase 4 — Movimiento lateral (Win10 → WinServer)
-**Técnica:** reutilización de credenciales comprometidas en el Escenario 1 (`SYS\Administrador:S0p0rt321`) para acceder a recursos SMB del Domain Controller.
+**Técnica:** reutilización de credenciales comprometidas en el Escenario 1 (`SYS\Administrador:[LAB-CREDENTIAL]`) para acceder a recursos SMB del Domain Controller.
 
 ```powershell
-net use \\192.168.50.10 /user:SYS\Administrador S0p0rt321
+net use \\192.168.50.10 /user:SYS\Administrador [LAB-CREDENTIAL]
 net view \\192.168.50.10
 ```
 
 Autenticación exitosa. Recursos compartidos accesibles: **NETLOGON** (scripts de inicio de sesión) y **SYSVOL** (Group Policy Objects de todo el dominio).
 
-**Impacto:** acceso a SYSVOL implica acceso de lectura/escritura potencial sobre las políticas que gobiernan TODOS los equipos del dominio.
+**Impacto:** el acceso de lectura a SYSVOL expone los scripts de inicio de sesión y la estructura de Group Policy Objects (GPOs) de todo el dominio — información valiosa para reconocimiento y planificación de ataques posteriores. El acceso de escritura sobre las GPOs depende de los permisos NTFS específicos de la cuenta comprometida, no se verificó en este ejercicio.
 
 ![PowerShell mostrando NETLOGON y SYSVOL accesibles](images/19-net-use-sysvol.png)
 
@@ -315,7 +320,7 @@ Autenticación exitosa. Recursos compartidos accesibles: **NETLOGON** (scripts d
 
 ```cmd
 runas /user:SYS\Administrador /netonly "cmd.exe"
-net user svc_backup P@ssw0rd123! /add /domain
+net user svc_backup [LAB-CREDENTIAL] /add /domain
 net group "Admins. del dominio" svc_backup /add /domain
 ```
 
@@ -368,7 +373,7 @@ Cuenta `svc_backup` creada y agregada a Domain Admins — el atacante mantiene a
 | Cuenta | svc_backup | Cuenta backdoor creada por el atacante |
 | Puerto | 3389/TCP | Puerto RDP expuesto en endpoint |
 | Puerto | 445/TCP | Puerto SMB usado para movimiento lateral |
-| Hash NTLM | b9b3f09fe9c14fe7f6d8b08a2225c57a | Hash de SYS\Administrador (Escenario 1) |
+| Hash NTLM | [REDACTED-NTLM-HASH] | Hash de SYS\Administrador (Escenario 1) |
 | Recurso | \\192.168.50.10\SYSVOL | Recurso crítico del DC accedido |
 | Recurso | \\192.168.50.10\NETLOGON | Recurso crítico del DC accedido |
 
@@ -428,7 +433,7 @@ Fecha: 14/08/2026
 ---
 
 ### Lecciones aprendidas
-1. **Reutilización de contraseñas:** la credencial comprometida en el Escenario 1 (`S0p0rt321`) fue reutilizada en múltiples cuentas, habilitando el movimiento lateral sin técnicas avanzadas.
+1. **Reutilización de contraseñas:** la credencial comprometida en el Escenario 1 (`[LAB-CREDENTIAL]`) fue reutilizada en múltiples cuentas, habilitando el movimiento lateral sin técnicas avanzadas.
 2. **RDP expuesto en endpoints:** un endpoint de usuario con RDP habilitado y cuenta administrativa local es una superficie de ataque crítica.
 3. **Limitación de segmentación L2:** las políticas de firewall no son efectivas para tráfico dentro del mismo segmento de red — la defensa en profundidad requiere controles a nivel de endpoint además de red.
 4. **Detección vs. prevención:** Wazuh detectó correctamente todo el ataque (incluyendo T1021.002 y T1484 level 12), pero sin respuesta automática el atacante logró completar sus objetivos. La integración de respuesta activa (FortiGate API + Wazuh) es la evolución natural del lab.

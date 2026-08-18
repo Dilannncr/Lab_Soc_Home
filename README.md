@@ -1,4 +1,4 @@
-[README.md](https://github.com/user-attachments/files/31153751/README.md)
+[README.md](https://github.com/user-attachments/files/31195244/README.md)
 # Laboratorio SOC Casero
 ### Portafolio Técnico de Ciberseguridad Defensiva
 
